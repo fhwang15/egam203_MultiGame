@@ -1,109 +1,102 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System.Collections;
 
 public class PlayerInput : MonoBehaviour
 {
 
-    public float Score;
+    public CircularTimer timer;
+
+    public TextMeshProUGUI currentComboText;
     public TextMeshProUGUI scoreText;
 
-    // The text that shows the current combo
-    public TextMeshProUGUI currentComboText;
+    private Color defaultColor;
 
-    public string currentCombo;
+    private string currentCombo = "WD";
+    private int score = 0;
+    private float inputTimeLimit = 2f;
+    private bool inputReceived = false;
 
-    private Dictionary<KeyCode, float> keyTimes = new Dictionary<KeyCode, float>();
-    public RandomCodeGenerator randomCodeGenerator;
-
-    public float inputWindow = 0.5f; // Time threshhold to check for key presses
-
-    private void Start()
+    void Start()
     {
-        //Initialize the combo
-        currentCombo = randomCodeGenerator.Generate();
-        currentComboText.text = "Current Combo: " + currentCombo;
-
-        // Initialize the score
-        Score = 0;
-        scoreText.text = "Score: " + Score.ToString();
+        defaultColor = currentComboText.color;
+        scoreText.text = $"Score: {score}";
+        StartCoroutine(ComboRoutine());
     }
 
-    // Update is called once per frame
-    void Update()
+    IEnumerator ComboRoutine()
     {
+        while (true)
+        {
+            GenerateCombo();
+            inputReceived = false;
 
-        CheckKey(KeyCode.W);
-        CheckKey(KeyCode.A);
-        CheckKey(KeyCode.S);
-        CheckKey(KeyCode.D);
+            float timer = 0f;
+            while (timer < inputTimeLimit)
+            {
+                timer += Time.deltaTime;
 
-        if (IsComboMatched("W", "D"))
-        {
-            Score += 10;
-            Debug.Log("Combo W + D matched!");
-            // Generate a new random code
-            currentCombo = randomCodeGenerator.Generate();
+                // 키 입력 감지
+                if (!inputReceived && CheckInput())
+                {
+                    inputReceived = true;
+                    score += 10;
+                    StartCoroutine(FlashColor(Color.green));
+                    break;
+                }
 
-        }
-        else if (IsComboMatched("A", "S"))
-        {
-            Score += 10;
-            Debug.Log("Combo D + F matched!");
-            currentCombo = randomCodeGenerator.Generate();
-        } 
-        else if (IsComboMatched("W", "S"))
-        {
-            Score += 10;
-            Debug.Log("Combo W + S matched!");
-            currentCombo = randomCodeGenerator.Generate();
-        }
-        else if (IsComboMatched("A", "D"))
-        {
-            Score += 10;
-            Debug.Log("Combo A + D matched!");
-            currentCombo = randomCodeGenerator.Generate();
-        }
-        else
-        {
-            // If no combo matched, minus the score
-            Score -= 10;
-            Debug.Log("No combo matched.");
-            currentCombo = randomCodeGenerator.Generate();
-        }
+                yield return null;
+            }
 
-            scoreText.text = "Score: " + Score.ToString();
-            currentComboText.text = "Current Combo: " + currentCombo;
-    }
+            // 시간 내 입력 안됐거나 틀렸다면 감점
+            if (!inputReceived)
+            {
+                score -= 10;
+                StartCoroutine(FlashColor(Color.red));
+            }
 
-    //Check how many seconds it took for players to press the key.
-    void CheckKey(KeyCode key)
-    {
-        if (Input.GetKeyDown(key))
-        {
-            keyTimes[key] = Time.time;
+            UpdateScoreText();
+            yield return new WaitForSeconds(1f); // 다음 문제까지 잠시 딜레이
         }
     }
 
-    private bool IsComboMatched(string Key1, string Key2)
+    IEnumerator FlashColor(Color targetColor, float duration = 0.3f)
     {
-        //If it's different, return false. player is wrong.
-        if (!keyTimes.ContainsKey(ToKeyCode(Key1)) || !keyTimes.ContainsKey(ToKeyCode(Key2)))
-        {
-            return false;
-        }
-
-        // Check the pressed time difference between the two keys
-        float t1 = keyTimes[ToKeyCode(Key1)];
-        float t2 = keyTimes[ToKeyCode(Key2)];
-
-        return Mathf.Abs(t1 - t2) <= inputWindow;
+        currentComboText.color = targetColor;
+        yield return new WaitForSeconds(duration);
+        currentComboText.color = defaultColor;
     }
 
-    KeyCode ToKeyCode(string s)
+    void GenerateCombo()
     {
-        // Convert the string to uppercase and parse it to KeyCode
-        return (KeyCode)System.Enum.Parse(typeof(KeyCode), s.ToUpper());
+        timer.StartTimer();
+        string[] combos = { "WD", "WS", "AD", "AS" };
+        currentCombo = combos[Random.Range(0, combos.Length)];
+        currentComboText.text = currentCombo;
+    }
+
+    bool CheckInput()
+    {
+        List<char> keys = new List<char>();
+
+        if (Input.GetKey(KeyCode.W)) keys.Add('W');
+        if (Input.GetKey(KeyCode.A)) keys.Add('A');
+        if (Input.GetKey(KeyCode.S)) keys.Add('S');
+        if (Input.GetKey(KeyCode.D)) keys.Add('D');
+
+        if (keys.Count != 2) return false;
+
+        keys.Sort();
+        string input = new string(new char[] { keys[0], keys[1] });
+
+        Debug.Log($"입력된 조합: {input}, 정답: {currentCombo}");
+        return input == currentCombo;
+    }
+
+    void UpdateScoreText()
+    {
+        scoreText.text = $"Score: {score}";
     }
 
 }
