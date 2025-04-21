@@ -71,8 +71,13 @@ public class PlayerInput : MonoBehaviour
     void GenerateCombo()
     {
         timer.StartTimer();
-        string[] combos = { "WD", "WS", "AD", "AS" };
-        currentCombo = combos[Random.Range(0, combos.Length)];
+        List<string> validCombos = new List<string> { "WS", "WD", "AS", "AD" };
+
+        string rawCombo = validCombos[Random.Range(0, validCombos.Count)];
+
+        char[] comboChars = rawCombo.ToCharArray();
+        System.Array.Sort(comboChars);
+        currentCombo = new string(comboChars);
         currentComboText.text = currentCombo;
     }
 
