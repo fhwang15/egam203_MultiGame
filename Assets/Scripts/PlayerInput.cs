@@ -15,7 +15,7 @@ public class PlayerInput : MonoBehaviour
 
     private string currentCombo = "WD";
     private int score = 0;
-    private float inputTimeLimit = 2f;
+    private float inputTimeLimit = 5f;
     private bool inputReceived = false;
 
     void Start()
@@ -85,10 +85,10 @@ public class PlayerInput : MonoBehaviour
     {
         List<char> keys = new List<char>();
 
-        if (Input.GetKey(KeyCode.W)) keys.Add('W');
-        if (Input.GetKey(KeyCode.A)) keys.Add('A');
-        if (Input.GetKey(KeyCode.S)) keys.Add('S');
-        if (Input.GetKey(KeyCode.D)) keys.Add('D');
+        if (Input.GetKey(KeyCode.UpArrow)) keys.Add('W');
+        if (Input.GetKey(KeyCode.LeftArrow)) keys.Add('A');
+        if (Input.GetKey(KeyCode.DownArrow)) keys.Add('S');
+        if (Input.GetKey(KeyCode.RightArrow)) keys.Add('D');
 
         if (keys.Count != 2) return false;
 
